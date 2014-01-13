@@ -135,15 +135,13 @@ def load():
     DATACARD  = amjanddata[1].strip('\n')
 
 def startexecution():
-    '''
-    IC = 0 
-    executeuserprogram()
-    '''
     global IC
     global IR
     global M
     global C
     global SI
+    IC = 0 
+    executeuserprogram()
 
 def executeuserprogram():
     '''
@@ -151,7 +149,7 @@ def executeuserprogram():
        IR = M[IC]
        IC = IC +1 
        EXAMINE IR [1,2]
-            LR:	R ← M [IR[3,4]]
+                LR:	R ← M [IR[3,4]]
 		SR:	R → M [IR[3,4]]
 		CR: 	Compare R and M [IR[3,4]]
 			If equal C ← T else C ← F	
@@ -166,3 +164,22 @@ def executeuserprogram():
     global M
     global C
     global SI
+
+
+
+
+
+## ['G','D'] => 'GD'
+def mergestring(list_char):
+    stri_made = ''
+    for chars in list_char : 
+        stri_made  = stri_made + chars
+    return stri_made 
+
+
+## 'GD' => ['G','D']
+def spilt_str(stri):
+    lis_ret = [ ]
+    for e in stri :
+        lis_ret.append(e)
+    return lis_ret
