@@ -122,17 +122,28 @@ def load():
     global C
     global SI
     global input_file
-    M = 0 
+    global eof 
     card = ''
+    eof = 1
     for line in input_file:
+        eof = 0 
 	if (line=='$END\n'):
 		break 
 	else :
 		card = card + line
+    if eof :
+        #================================ End OF program ======================
+        print "Done !!!"
+        exit()
     splitamj = card.split("$AMJ")
     amjanddata = splitamj[1].split("$DATA\n")
     AMJCARD = amjanddata[0].strip('\n')
     DATACARD  = amjanddata[1].strip('\n')
+    INSTRUC = AMJCARD[13:]
+    
+    listofchar = spilt_str(INSTRUC)
+    ## fill in memory here
+    
 
 def startexecution():
     global IC
@@ -164,7 +175,7 @@ def executeuserprogram():
     global M
     global C
     global SI
-
+    
 
 
 
@@ -183,3 +194,29 @@ def spilt_str(stri):
     for e in stri :
         lis_ret.append(e)
     return lis_ret
+
+
+def fill_memory(listofchar , row, col=0 ):
+    lenlist = len(listofchar)
+    hori = row 
+    ver = col 
+    innerloop = 0
+ 
+    global M
+
+    while(hori < 100):
+        while(col < 4): 
+            M[hori][col] = listofchar.pop(0)
+            lenlist = lenlist -1
+            col = col + 1
+            if lenlist==0 :
+                innerloop =1 
+                break 
+        col = 0 
+        hori = hori + 1 
+        if innerloop : 
+            break 
+
+    if (lenlist > 0 ):
+        print "OVERFLOW !!! MEMORY OUT OF BOUND ERROR . "
+        exit()
