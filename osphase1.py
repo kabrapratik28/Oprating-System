@@ -70,10 +70,14 @@ def read():
     global M
     global C
     global SI
-    
+    global DATACARD
     address_of_store = IR[1]
-    final_address = address_of_store[0] + '0'
-    
+    final_address = int(address_of_store[0] + '0')
+    char_data =   DATACARD[:40]
+    listofchar = spilt_str(char_data)
+    fill_memory(listofchar , final_address ):
+    DATACARD =  DATACARD[40:]
+
 def write():
     '''
     IR[4] = 0 
@@ -85,19 +89,29 @@ def write():
     global M
     global C
     global SI
-
-
+    global OUT
+    address_of_store = IR[1]
+    final_address = int(address_of_store[0] + '0')
+    counter_of_mem = 0 
+    while (counter_of_mem<=9): 
+        li_chrs = read_memory(final_address )
+        OUT = OUT + mergestring(li_chrs)
+        final_address = final_address + 1
+        counter_of_mem = counter_of_mem +1 
+    write_to_file()
 def terminate():
     '''
     print two blank lines
     MOS / LOAD      ## First load the program then mos
     '''
-        global IC
+    global IC
     global IR
     global M
     global C
     global SI
-    ## print two lines 
+    global OUT
+    OUT = OUT + '\n\n'
+    write_to_file()
     load()
 
 def load():
@@ -123,7 +137,11 @@ def load():
     global SI
     global input_file
     global eof 
+    global DATACARD
+    global OUT
+    intilization()
     card = ''
+    OUT= ''
     eof = 1
     for line in input_file:
         eof = 0 
@@ -132,7 +150,7 @@ def load():
 	else :
 		card = card + line
     if eof :
-        #================================ End OF program ======================
+        #End Of Program
         print "Done !!!"
         exit()
     splitamj = card.split("$AMJ")
@@ -143,7 +161,7 @@ def load():
     
     listofchar = spilt_str(INSTRUC)
     ## fill in memory here
-    
+    fill_memory(listofchar , 0, 0 )   ## list , row and col
 
 def startexecution():
     global IC
@@ -155,21 +173,6 @@ def startexecution():
     executeuserprogram()
 
 def executeuserprogram():
-    '''
-    loop 
-       IR = M[IC]
-       IC = IC +1 
-       EXAMINE IR [1,2]
-                LR:	R ← M [IR[3,4]]
-		SR:	R → M [IR[3,4]]
-		CR: 	Compare R and M [IR[3,4]]
-			If equal C ← T else C ← F	
-		BT:	If C = T then IC ← IR [3,4]
-		GD:	SI = 1
-		PD: 	SI = 2
-		H:	SI = 3
-      END examine
-    END LOOP  '''
     global IC
     global IR
     global M
@@ -218,5 +221,29 @@ def fill_memory(listofchar , row, col=0 ):
             break 
 
     if (lenlist > 0 ):
-        print "OVERFLOW !!! MEMORY OUT OF BOUND ERROR . "
+        print "WRITE MEMORY OUT OF BOUND ERROR . "
         exit()
+
+
+def read_memory( row , col = 0 ):
+    li_char = []
+    global M
+    if (row > 99 or row < 0 or col>3 or col <0):
+        print "READ MEMORY OUT OF BOUND ERROR . "
+        exit()
+        
+    while (col < 4):
+        li_char.append(M[row][col])
+        col = col + 1 
+
+    return li_char
+
+
+
+
+def  write_to_file():
+    global OUT 
+    opentowrite = open('out','w')
+    opentowrite.write(OUT)
+    opentowrite.close()
+    OUT = ''           ## BUffer written to file and so now empty 
