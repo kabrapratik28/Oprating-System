@@ -157,8 +157,7 @@ def load():
     amjanddata = splitamj[1].split("$DATA\n")
     AMJCARD = amjanddata[0].strip('\n')
     DATACARD  = amjanddata[1].strip('\n')
-    INSTRUC = AMJCARD[13:]
-    
+    INSTRUC = AMJCARD[13:] 
     listofchar = spilt_str(INSTRUC)
     ## fill in memory here
     fill_memory(listofchar , 0, 0 )   ## list , row and col
@@ -178,11 +177,32 @@ def executeuserprogram():
     global M
     global C
     global SI
-    
-
-
-
-
+    while True : 
+        li_chrt = read_memory(IC)
+        str_oper = mergestring(li_chrt)
+        IR[0] = str_oper[:2]
+        IR[1] = str_oper[2:]
+        IC = IC + 1
+        if IR[0]=="LR" : 
+            
+        elif IR[0]=="SR" :
+            
+        elif IR[0]=="CR" :
+            
+        elif IR[0]=="BT" :
+            
+        elif IR[0]=="GD" :
+              
+        elif IR[0]=="PD" :
+            
+        elif IR[0]=="H" :            ##** See String 
+            break 
+        else : 
+            print "Wrong Operand"
+            print "IR : "+ IR
+            exit()
+        SI = 3 
+        MOS()
 ## ['G','D'] => 'GD'
 def mergestring(list_char):
     stri_made = ''
