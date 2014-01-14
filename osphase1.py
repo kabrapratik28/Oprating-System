@@ -1,6 +1,3 @@
-input_file = open('in','r')
-
-
 '''
 IC= instruction counter
 IR= instruction register
@@ -23,6 +20,12 @@ def intilization():
     global M
     global C
     global SI
+    global R 
+    global DATACARD
+    global OUT
+    global input_file
+    global eof
+
     IC = 0 
     IR =  [ '' , '' ]   ## ['GD','20'] 
     #  MEMORY INTIALIZATION *** IMPROVE HERE
@@ -50,6 +53,11 @@ def MOS():
     global M
     global C
     global SI
+    global R 
+    global DATACARD
+    global OUT
+    global input_file
+    global eof
 
     if SI == 1 :
         read()
@@ -70,7 +78,12 @@ def read():
     global M
     global C
     global SI
+    global R 
     global DATACARD
+    global OUT
+    global input_file
+    global eof
+
     address_of_store = IR[1]
     final_address = int(address_of_store[0] + '0')
     char_data =   DATACARD[:40]
@@ -89,7 +102,12 @@ def write():
     global M
     global C
     global SI
+    global R 
+    global DATACARD
     global OUT
+    global input_file
+    global eof
+
     address_of_store = IR[1]
     final_address = int(address_of_store[0] + '0')
     counter_of_mem = 0 
@@ -109,7 +127,12 @@ def terminate():
     global M
     global C
     global SI
+    global R 
+    global DATACARD
     global OUT
+    global input_file
+    global eof
+
     OUT = OUT + '\n\n'
     write_to_file()
     load()
@@ -135,10 +158,13 @@ def load():
     global M
     global C
     global SI
-    global input_file
-    global eof 
+    global R 
     global DATACARD
     global OUT
+    global input_file
+    global eof
+
+
     intilization()
     card = ''
     OUT= ''
@@ -153,21 +179,31 @@ def load():
         #End Of Program
         print "Done !!!"
         exit()
-    splitamj = card.split("$AMJ")
-    amjanddata = splitamj[1].split("$DATA\n")
-    AMJCARD = amjanddata[0].strip('\n')
-    DATACARD  = amjanddata[1].strip('\n')
-    INSTRUC = AMJCARD[13:] 
-    listofchar = spilt_str(INSTRUC)
-    ## fill in memory here
-    fill_memory(listofchar , 0, 0 )   ## list , row and col
-
+    if "$AMJ" in card :
+        splitamj = card.split("$AMJ")
+        amjanddata = splitamj[1].split("$DATA\n")
+        AMJCARD = amjanddata[0].strip('\n')
+        DATACARD  = amjanddata[1].strip('\n')
+        INSTRUC = AMJCARD[13:] 
+        listofchar = spilt_str(INSTRUC)
+        ## fill in memory here
+        fill_memory(listofchar , 0, 0 )   ## list , row and col
+    else :
+        print "JOB CARD NOT CONTAIN $AMJ OR DONT GIVE ENTER AFTER LAST $END"
+        exit()
 def startexecution():
     global IC
     global IR
     global M
     global C
     global SI
+    global R 
+    global DATACARD
+    global OUT
+    global input_file
+    global eof
+
+
     IC = 0
     executeuserprogram()
     
@@ -177,7 +213,12 @@ def executeuserprogram():
     global M
     global C
     global SI
-    global R
+    global R 
+    global DATACARD
+    global OUT
+    global input_file
+    global eof
+
     while True : 
         li_chrt = read_memory(IC)
         str_oper = mergestring(li_chrt)
@@ -228,12 +269,13 @@ def spilt_str(stri):
 
 
 def fill_memory(listofchar , row, col=0 ):
+ 
+    global M
+
     lenlist = len(listofchar)
     hori = row 
     ver = col 
     innerloop = 0
- 
-    global M
 
     while(hori < 100):
         while(col < 4): 
@@ -254,8 +296,10 @@ def fill_memory(listofchar , row, col=0 ):
 
 
 def read_memory( row , col = 0 ):
+
+    global M 
+
     li_char = []
-    global M
     if (row > 99 or row < 0 or col>3 or col <0):
         print "READ MEMORY OUT OF BOUND ERROR . "
         exit()
@@ -270,13 +314,17 @@ def read_memory( row , col = 0 ):
 
 
 def  write_to_file():
+
     global OUT 
+
     opentowrite = open('out','a')
     opentowrite.write(str(OUT))
     opentowrite.close()
     OUT = ''           ## BUffer written to file and so now empty 
 
 
+input_file = open('in','r')
 load()
-startexecution()
-startexecution()
+while True :
+    startexecution()
+    
