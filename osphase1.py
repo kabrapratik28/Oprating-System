@@ -29,7 +29,7 @@ def intilization():
     M = []
     for count in range(100):
         M.append(['','','',''])
-    R = 0 
+    R = ['','','',''] 
     C = 0      ##  0 : false 1 :true
     SI = 3
     
@@ -75,7 +75,7 @@ def read():
     final_address = int(address_of_store[0] + '0')
     char_data =   DATACARD[:40]
     listofchar = spilt_str(char_data)
-    fill_memory(listofchar , final_address ):
+    fill_memory(listofchar , final_address )
     DATACARD =  DATACARD[40:]
 
 def write():
@@ -168,15 +168,16 @@ def startexecution():
     global M
     global C
     global SI
-    IC = 0 
+    IC = 0
     executeuserprogram()
-
+    
 def executeuserprogram():
     global IC
     global IR
     global M
     global C
     global SI
+    global R
     while True : 
         li_chrt = read_memory(IC)
         str_oper = mergestring(li_chrt)
@@ -184,25 +185,32 @@ def executeuserprogram():
         IR[1] = str_oper[2:]
         IC = IC + 1
         if IR[0]=="LR" : 
-            
+            R = read_memory(int (IR[1]) )
         elif IR[0]=="SR" :
-            
+            fill_memory(R , int(IR[1]))
         elif IR[0]=="CR" :
-            
+            if R == read_memory(int (IR[1]) ):
+                C = 1 
+            else: 
+                C = 0 
         elif IR[0]=="BT" :
-            
+            if C== 1: 
+                IC = int (IR[1])
         elif IR[0]=="GD" :
-              
+            SI = 1 
+            MOS()
         elif IR[0]=="PD" :
-            
+            SI = 2
+            MOS()
         elif IR[0]=="H" :            ##** See String 
+            SI = 3
+            MOS()
             break 
         else : 
             print "Wrong Operand"
-            print "IR : "+ IR
+            print "IR : "+ str(IR)
             exit()
-        SI = 3 
-        MOS()
+        
 ## ['G','D'] => 'GD'
 def mergestring(list_char):
     stri_made = ''
@@ -263,7 +271,12 @@ def read_memory( row , col = 0 ):
 
 def  write_to_file():
     global OUT 
-    opentowrite = open('out','w')
-    opentowrite.write(OUT)
+    opentowrite = open('out','a')
+    opentowrite.write(str(OUT))
     opentowrite.close()
     OUT = ''           ## BUffer written to file and so now empty 
+
+
+load()
+startexecution()
+startexecution()
