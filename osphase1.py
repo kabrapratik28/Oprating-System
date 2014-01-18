@@ -349,7 +349,7 @@ def split_data_program(card):
             everyline = everyline.strip("\n\r\t ")
             pcardstr = pcardstr + everyline[:40]
         elif temp=="dcard"  :
-            everyline = everyline.strip("\n\r\t ")
+            everyline = everyline.strip("\n\r")
             dcardstr = dcardstr + everyline[:40]
     return [pcardstr,dcardstr]
 
