@@ -7,6 +7,7 @@ SI= system interupt
 in = Input file ... JOB card
 out = Output file 
 '''
+import re 
 def intilization():
     '''
     IC = 0 
@@ -63,7 +64,7 @@ def MOS():
         read()
     elif SI == 2:
         write()
-    else :
+    elif SI == 3 :
         terminate()
 
 def read():
@@ -113,7 +114,7 @@ def write():
     counter_of_mem = 0 
     while (counter_of_mem<=9): 
         li_chrs = read_memory(final_address )
-        OUT = OUT + mergestring(li_chrs)
+        OUT = OUT + mergestring(li_chrs)                               
         final_address = final_address + 1
         counter_of_mem = counter_of_mem +1 
     write_to_file()
@@ -133,7 +134,7 @@ def terminate():
     global input_file
     global eof
 
-    OUT = OUT + '\n\n'
+    OUT = OUT + '\n'
     write_to_file()
     load()
 
@@ -171,23 +172,29 @@ def load():
     eof = 1
     for line in input_file:
         eof = 0 
-	if (line=='$END\n'):
+	if (re.search(r'^\$END(\d)+',line)):              
 		break 
 	else :
-		card = card + line
+		card = card + line                                                ##  line[:40].strip("\n\r\t")
     if eof :
         #End Of Program
         print "Done !!!"
         exit()
     if "$AMJ" in card :
+        '''                                           ## <<=========   read card ()
         splitamj = card.split("$AMJ")
         amjanddata = splitamj[1].split("$DATA\n")
         AMJCARD = amjanddata[0].strip('\n')
         DATACARD  = amjanddata[1].strip('\n')
-        INSTRUC = AMJCARD[13:] 
+        INSTRUC = AMJCARD[13:]
+        '''
+        list_card_data = split_data_program(card)
+        INSTRUC = list_card_data[0]
+        DATACARD = list_card_data[1]
         listofchar = spilt_str(INSTRUC)
         ## fill in memory here
         fill_memory(listofchar , 0, 0 )   ## list , row and col
+
     else :
         print "JOB CARD NOT CONTAIN $AMJ OR DONT GIVE ENTER AFTER LAST $END"
         exit()
@@ -243,6 +250,8 @@ def executeuserprogram():
         elif IR[0]=="PD" :
             SI = 2
             MOS()
+        elif IR[0]=="XX" : 
+            None 
         elif IR[0]=="H" :            ##** See String 
             SI = 3
             MOS()
@@ -250,7 +259,7 @@ def executeuserprogram():
         else : 
             print "Wrong Operand"
             print "IR : "+ str(IR)
-            exit()
+            #exit()
         
 ## ['G','D'] => 'GD'
 def mergestring(list_char):
@@ -278,11 +287,12 @@ def fill_memory(listofchar , row, col=0 ):
     innerloop = 0
 
     while(hori < 100):
-        while(col < 4): 
-            M[hori][col] = listofchar.pop(0)
-            lenlist = lenlist -1
-            col = col + 1
-            if lenlist==0 :
+        while(col < 4):
+            if lenlist > 0:
+                M[hori][col] = listofchar.pop(0)
+                lenlist = lenlist -1
+                col = col + 1
+            elif lenlist==0 :
                 innerloop =1 
                 break 
         col = 0 
@@ -318,10 +328,30 @@ def  write_to_file():
     global OUT 
 
     opentowrite = open('out','a')
-    opentowrite.write(str(OUT))
+    opentowrite.write(str(OUT)+"\n") 
     opentowrite.close()
     OUT = ''           ## BUffer written to file and so now empty 
 
+
+def split_data_program(card):
+    pcard =  "pcard"
+    dcard = "dcard"
+    pcardstr = ""
+    dcardstr = ""
+    temp = pcard 
+    array_of_line = card.split("\n")
+    for everyline in array_of_line :
+        if (re.search(r'^\$AMJ(\d)+',everyline)):
+            temp = pcard 
+        elif (re.search(r'^\$DTA',everyline)):
+            temp = dcard
+        elif temp=="pcard" : 
+            everyline = everyline.strip("\n\r\t ")
+            pcardstr = pcardstr + everyline[:40]
+        elif temp=="dcard"  :
+            everyline = everyline.strip("\n\r\t ")
+            dcardstr = dcardstr + everyline[:40]
+    return [pcardstr,dcardstr]
 
 input_file = open('in','r')
 load()
