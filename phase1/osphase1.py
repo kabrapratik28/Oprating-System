@@ -87,10 +87,23 @@ def read():
 
     address_of_store = IR[1]
     final_address = int(address_of_store[0] + '0')
-    char_data =   DATACARD[:40]
+    #char_data =   DATACARD[:40]                           
+    
+    counterlenght = 0                            
+    tempstr = ''
+    while(counterlenght<40):
+         if DATACARD[0]=="\n" :                        ## if \n is in lenght 40 then take only that
+             DATACARD =DATACARD[1:] 
+             break 
+         tempstr= tempstr + DATACARD[0]
+         DATACARD = DATACARD[1:]
+         counterlenght = counterlenght + 1 
+    #print tempstr
+    #print M
+    char_data = tempstr
     listofchar = spilt_str(char_data)
     fill_memory(listofchar , final_address )
-    DATACARD =  DATACARD[40:]
+    #DATACARD =  DATACARD[40:]                     
 
 def write():
     '''
@@ -134,7 +147,7 @@ def terminate():
     global input_file
     global eof
 
-    OUT = OUT + '\n'
+    OUT = OUT + '\n\n'
     write_to_file()
     load()
 
@@ -225,7 +238,6 @@ def executeuserprogram():
     global OUT
     global input_file
     global eof
-
     while True : 
         li_chrt = read_memory(IC)
         str_oper = mergestring(li_chrt)
@@ -235,8 +247,11 @@ def executeuserprogram():
         if IR[0]=="LR" : 
             R = read_memory(int (IR[1]) )
         elif IR[0]=="SR" :
-            fill_memory(R , int(IR[1]))
+            tempR = R [:]                                            ## ******************************** copy this way
+            fill_memory(tempR , int(IR[1]))
         elif IR[0]=="CR" :
+            #print R
+            #print read_memory(int (IR[1]) )
             if R == read_memory(int (IR[1]) ):
                 C = 1 
             else: 
@@ -279,12 +294,31 @@ def spilt_str(stri):
 
 def fill_memory(listofchar , row, col=0 ):
  
+    global IC
+    global IR
     global M
+    global C
+    global SI
+    #global R 
+    global DATACARD
+    global OUT
+    global input_file
+    global eof
 
     lenlist = len(listofchar)
     hori = row 
     ver = col 
     innerloop = 0
+    ##FIRST CLEAR GARBAGE BEFORE SORING NEW BLOCK OF DATA AT THAT BLOCK**************************
+    
+    counter_for_garbage = 0 
+    colcounter = 0 
+    while(counter_for_garbage<10):
+        while(colcounter<4):
+            M[hori][colcounter] = ''
+            colcounter = colcounter + 1
+        counter_for_garbage = counter_for_garbage + 1 
+        colcounter = 0 
 
     while(hori < 100):
         while(col < 4):
@@ -299,7 +333,7 @@ def fill_memory(listofchar , row, col=0 ):
         hori = hori + 1 
         if innerloop : 
             break 
-
+    
     if (lenlist > 0 ):
         print "WRITE MEMORY OUT OF BOUND ERROR . "
         exit()
@@ -328,7 +362,10 @@ def  write_to_file():
     global OUT 
 
     opentowrite = open('out','a')
-    opentowrite.write(str(OUT)+"\n") 
+    OUT = OUT.strip("\00")
+    if '\n' not  in OUT : 
+        OUT = OUT + "\n"
+    opentowrite.write(str(OUT)) 
     opentowrite.close()
     OUT = ''           ## BUffer written to file and so now empty 
 
@@ -349,7 +386,8 @@ def split_data_program(card):
             everyline = everyline.strip("\n\r\t ")
             pcardstr = pcardstr + everyline[:40]
         elif temp=="dcard"  :
-            everyline = everyline.strip("\n\r")
+            everyline = everyline.strip("\r")
+            everyline = everyline + "\n"
             dcardstr = dcardstr + everyline[:40]
     return [pcardstr,dcardstr]
 
