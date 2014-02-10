@@ -17,7 +17,6 @@ def allocate():
             break 
     return numberall*10
 
-
 def intilization():
     global IC
     global IR
@@ -42,7 +41,7 @@ def intilization():
     FLAG_REGISTER = [0,3,0,0,0,0]   ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
     arrayofused = []    ## used blocks array
     PTR = allocate()     ## random bolck as page table 
-    fill_memory([0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1] , PTR)    ##page taable filling
+    fill_memory([0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1] , PTR)    ##page table filling
 
 def MOS():
     ##SI = 3                                                                                            ??????? 
@@ -56,7 +55,7 @@ def MOS():
     global OUT
     global input_file
     global eof
-
+    global PTR
     if FLAG_REGISTER[1] == 1 :
         read()
     elif FLAG_REGISTER[1] == 2:
@@ -75,7 +74,7 @@ def read():
     global OUT
     global input_file
     global eof
-
+    global PTR
     address_of_store = IR[1]
     final_address = int(address_of_store[0] + '0')
     #char_data =   DATACARD[:40]                           
@@ -107,7 +106,7 @@ def write():
     global OUT
     global input_file
     global eof
-
+    global PTR
     address_of_store = IR[1]
     final_address = int(address_of_store[0] + '0')
     counter_of_mem = 0 
@@ -128,7 +127,7 @@ def terminate():
     global OUT
     global input_file
     global eof
-
+    global PTR
     OUT = OUT + '\n\n'
     write_to_file()
     load()
@@ -144,8 +143,8 @@ def load():
     global OUT
     global input_file
     global eof
-
-
+    global PTR
+    global obj_TTL_TLL
     intilization()
     card = ''
     OUT= ''
@@ -164,10 +163,24 @@ def load():
         list_card_data = split_data_program(card)
         INSTRUC = list_card_data[0]
         DATACARD = list_card_data[1]
-        listofchar = spilt_str(INSTRUC)
+        numbers_in_AMJ = list_card_data[2]
+        obj_TTL_TLL = PCB(int(numbers_in_AMJ[4:8]),int(numbers_in_AMJ[8:]))
+        listofchar = spilt_str(INSTRUC)  ##instructions character
         ## fill in memory here
-        fill_memory(listofchar , 0, 0 )   ## list , row and col
-
+        ##fill_memory(listofchar , 0, 0 )   ## list , row and col
+        lenghtofinstru = len(listofchar)
+        pagebaseaddress = PTR
+        while(lenghtofinstru>0):
+            randomblockno = allocate()
+            fill_memory(listofchar[:40],randomblockno)
+            basenumber = '0000'+ str(randomblockno/10)   ## adding safeside '0000' bz if basenumber is just 1 how to fill in 4 memory 
+            basechars = spilt_str(basenumber)  ##'000001' = >  ['0','0','0','0','0','1']
+            baselistofchar = spilt_str(basechars[len(basechars)-3:])    ##last 3 digit only
+            totalpasstomemory = [1,] + map(int,baselistofchar)
+            fill_memory(totalpasstomemory,pagebaseaddress)
+            listofchar=listofchar[40:]
+            lenghtofinstru = len(listofchar)
+            pagebaseaddress = pagebaseaddress+1 
     else :
         print "JOB CARD NOT CONTAIN $AMJ OR DONT GIVE ENTER AFTER LAST $END"
         exit()
@@ -182,7 +195,7 @@ def startexecution():
     global OUT
     global input_file
     global eof
-
+    global PTR
 
     IC = 0
     executeuserprogram()
@@ -198,6 +211,7 @@ def executeuserprogram():
     global OUT
     global input_file
     global eof
+    global PTR
     while True : 
         li_chrt = read_memory(IC)
         str_oper = mergestring(li_chrt)
@@ -240,7 +254,7 @@ def executeuserprogram():
 def mergestring(list_char):
     stri_made = ''
     for chars in list_char : 
-        stri_made  = stri_made + chars
+        stri_made  = stri_made + str(chars)
     return stri_made 
 
 
@@ -264,7 +278,7 @@ def fill_memory(listofchar , row, col=0 ):
     global OUT
     global input_file
     global eof
-
+    global PTR
     lenlist = len(listofchar)
     hori = row 
     ver = col 
@@ -302,9 +316,9 @@ def fill_memory(listofchar , row, col=0 ):
 def read_memory( row , col = 0 ):
 
     global M 
-
     li_char = []
     if (row > 99 or row < 0 or col>3 or col <0):
+        #print "PTR :"+ str(PTR)
         print "READ MEMORY OUT OF BOUND ERROR . "
         exit()
         
@@ -337,9 +351,11 @@ def split_data_program(card):
     dcardstr = ""
     temp = pcard 
     array_of_line = card.split("\n")
+    allnumberrelated = "000000000000"
     for everyline in array_of_line :
         if (re.search(r'^\$AMJ(\d)+',everyline)):
             temp = pcard 
+            allnumberrelated = everyline[4:]    ## 3 numbers 
         elif (re.search(r'^\$DTA',everyline)):
             temp = dcard
         elif temp=="pcard" : 
@@ -349,15 +365,15 @@ def split_data_program(card):
             everyline = everyline.strip("\r")
             everyline = everyline + "\n"
             dcardstr = dcardstr + everyline[:40]
-    return [pcardstr,dcardstr]
+    return [pcardstr,dcardstr,allnumberrelated]
 
-###input_file = open('in','r')
-#load()
+input_file = open('in','r')
+load()
 #while True :
 #    startexecution()
     
 
-intilization()
-print "PTR" + str(PTR)
+#intilization()
+print "PTR ------ >> " + str(PTR)
 for cc in M:
 	print cc
