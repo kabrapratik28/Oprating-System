@@ -170,7 +170,7 @@ def load():
         ##fill_memory(listofchar , 0, 0 )   ## list , row and col
         lenghtofinstru = len(listofchar)
         pagebaseaddress = PTR
-        while(lenghtofinstru>0):
+        while(lenghtofinstru>0):                ## program card storing at random places and entry saving in page table
             randomblockno = allocate()
             fill_memory(listofchar[:40],randomblockno)
             basenumber = '0000'+ str(randomblockno/10)   ## adding safeside '0000' bz if basenumber is just 1 how to fill in 4 memory 
@@ -213,7 +213,9 @@ def executeuserprogram():
     global eof
     global PTR
     while True : 
-        li_chrt = read_memory(IC)
+        RA_IC = address_map(IC)
+        print RA_IC
+        li_chrt = read_memory(RA_IC)
         str_oper = mergestring(li_chrt)
         IR[0] = str_oper[:2]
         IR[1] = str_oper[2:]
@@ -317,7 +319,7 @@ def read_memory( row , col = 0 ):
 
     global M 
     li_char = []
-    if (row > 99 or row < 0 or col>3 or col <0):
+    if (row > 299 or row < 0 or col>3 or col <0):
         #print "PTR :"+ str(PTR)
         print "READ MEMORY OUT OF BOUND ERROR . "
         exit()
@@ -367,13 +369,42 @@ def split_data_program(card):
             dcardstr = dcardstr + everyline[:40]
     return [pcardstr,dcardstr,allnumberrelated]
 
+
+def address_map(VA):    ## int VA
+    global FLAG_REGISTER 
+    global PTR
+    global M
+    if (str(VA)<'0' or str(VA)>'99' or (not str(VA).isdigit())):
+        print VA
+        FLAG_REGISTER[0]=2   ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
+        return -1
+    else :
+        base  = VA/10 
+        displaced_add = PTR + base
+        if (M[displaced_add][0]==0):
+            FLAG_REGISTER[0]= 3
+            return -1 
+        else :
+            stringofRAbase = mergestring([str(M[displaced_add][1]),str(M[displaced_add][2]),str(M[displaced_add][3])])
+            intofRAbase = int(stringofRAbase)
+            RA = intofRAbase*10 + VA % 10 
+            return RA
+
+
+def simulation(): 
+    global FLAG_REGISTER     ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
+    global obj_TTL_TLL  
+    FLAG_REGISTER[4] = FLAG_REGISTER[4] +1 
+    if (FLAG_REGISTER[4]==obj_TTL_TLL.TTL):
+        FLAG_REGISTER[2] = 2
+
 input_file = open('in','r')
 load()
-#while True :
-#    startexecution()
-    
-
-#intilization()
 print "PTR ------ >> " + str(PTR)
 for cc in M:
 	print cc
+
+while True :
+   startexecution()
+    
+
