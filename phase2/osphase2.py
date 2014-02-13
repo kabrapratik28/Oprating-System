@@ -7,7 +7,6 @@ class PCB:        #PCB block  intilize by obj = PCB(10,11) ##access by obj.TTL
         self.TTL = TTL 
         self.TLL = TLL
 
-
 def allocate():
     global arrayofused
     while(1):
@@ -94,7 +93,7 @@ def read():
     #print M
     char_data = tempstr
     listofchar = spilt_str(char_data)
-    fill_memory(listofchar , final_address )                     ##  ???????????????????????????????????????????????????????? ***OUT of DATA
+    fill_memory(listofchar , final_address )                      ## fill memory change ## ?? ??***OUT of DATA
     #DATACARD =  DATACARD[40:]                     
 
 def write():
@@ -109,6 +108,7 @@ def write():
     global input_file
     global eof
     global PTR
+    global obj_TTL_TLL
     address_of_store = IR[1]
     final_address = int(address_of_store[0] + '0')
     counter_of_mem = 0 
@@ -116,8 +116,14 @@ def write():
         li_chrs = read_memory(final_address )
         OUT = OUT + mergestring(li_chrs)                               
         final_address = final_address + 1
-        counter_of_mem = counter_of_mem +1                          ## ********************************* TLL check ?? 
-    write_to_file()
+        counter_of_mem = counter_of_mem +1 
+    if (obj_TTL_TLL.TLL > FLAG_REGISTER[5]):          ##FLAG = [PI , SI , TI , EM , TTC , LLC ]     ## TLL check 
+        FLAG_REGISTER[5] = FLAG_REGISTER[5]+1
+        write_to_file()
+        print str(FLAG_REGISTER[5])+ "  : flaggg " + "  .... limit" +str(obj_TTL_TLL.TLL)
+    else: 
+        print str(FLAG_REGISTER[5])+ "  : flaggg ending"  + "  IR ... " + str(IR)
+        terminate()
 def terminate():
     global IC
     global IR
@@ -130,7 +136,7 @@ def terminate():
     global input_file
     global eof
     global PTR                                                       ## *********************************88 normal or abnormal exexcution
-    OUT = OUT + '\n\n'
+    OUT =  '\n\n'
     write_to_file()
     load()
 
@@ -160,6 +166,7 @@ def load():
     if eof :
         #End Of Program
         print "Done !!!"
+
         exit()
     if "$AMJ" in card :
         list_card_data = split_data_program(card)
@@ -410,4 +417,3 @@ for cc in M:
 while True :
    startexecution()
     
-
