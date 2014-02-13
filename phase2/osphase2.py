@@ -30,6 +30,7 @@ def intilization():
     global eof
     global arrayofused
     global PTR
+    global TERMINATE_NO 
     IC = 0 
     IR =  [ '' , '' ]   ## ['GD','20'] 
     #  MEMORY INTIALIZATION *** IMPROVE HERE
@@ -40,7 +41,8 @@ def intilization():
     C = 0      ##  0 : false 1 :true
     FLAG_REGISTER = [0,3,0,0,0,0]   ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
     arrayofused = []    ## used blocks array
-    PTR = allocate()     ## random bolck as page table 
+    PTR = allocate()     ## random bolck as page table
+    TERMINATE_NO = [] 
     fill_memory([0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1] , PTR)    ##page table filling
 
 def MOS():
@@ -92,7 +94,7 @@ def read():
     #print M
     char_data = tempstr
     listofchar = spilt_str(char_data)
-    fill_memory(listofchar , final_address )
+    fill_memory(listofchar , final_address )                     ##  ???????????????????????????????????????????????????????? ***OUT of DATA
     #DATACARD =  DATACARD[40:]                     
 
 def write():
@@ -114,7 +116,7 @@ def write():
         li_chrs = read_memory(final_address )
         OUT = OUT + mergestring(li_chrs)                               
         final_address = final_address + 1
-        counter_of_mem = counter_of_mem +1 
+        counter_of_mem = counter_of_mem +1                          ## ********************************* TLL check ?? 
     write_to_file()
 def terminate():
     global IC
@@ -127,7 +129,7 @@ def terminate():
     global OUT
     global input_file
     global eof
-    global PTR
+    global PTR                                                       ## *********************************88 normal or abnormal exexcution
     OUT = OUT + '\n\n'
     write_to_file()
     load()
@@ -214,7 +216,7 @@ def executeuserprogram():
     global PTR
     while True : 
         RA_IC = address_map(IC)
-        print RA_IC
+        #print RA_IC
         li_chrt = read_memory(RA_IC)
         str_oper = mergestring(li_chrt)
         IR[0] = str_oper[:2]
@@ -375,7 +377,7 @@ def address_map(VA):    ## int VA
     global PTR
     global M
     if (str(VA)<'0' or str(VA)>'99' or (not str(VA).isdigit())):
-        print VA
+        #print VA
         FLAG_REGISTER[0]=2   ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
         return -1
     else :
@@ -397,6 +399,7 @@ def simulation():
     FLAG_REGISTER[4] = FLAG_REGISTER[4] +1 
     if (FLAG_REGISTER[4]==obj_TTL_TLL.TTL):
         FLAG_REGISTER[2] = 2
+
 
 input_file = open('in','r')
 load()
