@@ -29,7 +29,6 @@ def intilization():
     global eof
     global arrayofused
     global PTR
-    global TERMINATE_NO 
     IC = 0 
     IR =  [ '' , '' ]   ## ['GD','20'] 
     #  MEMORY INTIALIZATION *** IMPROVE HERE
@@ -40,8 +39,7 @@ def intilization():
     C = 0      ##  0 : false 1 :true
     FLAG_REGISTER = [0,3,0,0,0,0]   ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
     arrayofused = []    ## used blocks array
-    PTR = allocate()     ## random bolck as page table
-    TERMINATE_NO = [] 
+    PTR = allocate()     ## random bolck as page table 
     fill_memory([0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1] , PTR)    ##page table filling
 
 def MOS():
@@ -76,8 +74,9 @@ def read():
     global input_file
     global eof
     global PTR
-    address_of_store = IR[1]
-    final_address = int(address_of_store[0] + '0')
+    global REAL_ADDRESS_OF_INS
+    address_of_store = (REAL_ADDRESS_OF_INS /10) *10    ## base address
+    final_address = address_of_store   ## address take at is it 
     #char_data =   DATACARD[:40]                           
     
     counterlenght = 0                            
@@ -92,9 +91,15 @@ def read():
     #print tempstr
     #print M
     char_data = tempstr
+    if (len(char_data)==0):       ## OUT OF DATA ERROR 
+        print "Out of data"
+        terminate()
     listofchar = spilt_str(char_data)
-    fill_memory(listofchar , final_address )                      ## fill memory change ## ?? ??***OUT of DATA
+    ##fill_memory(listofchar , final_address )                      ## fill memory change ## ?? ??***OUT of DATA
+    Realaddress_to_store = final_address                            ## final address is onely real address 
+    fill_memory(listofchar ,Realaddress_to_store)
     #DATACARD =  DATACARD[40:]                     
+    
 
 def write():
     global IC
@@ -109,8 +114,9 @@ def write():
     global eof
     global PTR
     global obj_TTL_TLL
-    address_of_store = IR[1]
-    final_address = int(address_of_store[0] + '0')
+    global REAL_ADDRESS_OF_INS
+    address_of_store = (REAL_ADDRESS_OF_INS /10) *10   ## base address 
+    final_address = address_of_store   ## address written is RA 
     counter_of_mem = 0 
     while (counter_of_mem<=9): 
         li_chrs = read_memory(final_address )
@@ -120,9 +126,10 @@ def write():
     if (obj_TTL_TLL.TLL > FLAG_REGISTER[5]):          ##FLAG = [PI , SI , TI , EM , TTC , LLC ]     ## TLL check 
         FLAG_REGISTER[5] = FLAG_REGISTER[5]+1
         write_to_file()
-        print str(FLAG_REGISTER[5])+ "  : flaggg " + "  .... limit" +str(obj_TTL_TLL.TLL)
+        #print str(FLAG_REGISTER[5])+ "  : flaggg " + "  .... limit" +str(obj_TTL_TLL.TLL)
     else: 
-        print str(FLAG_REGISTER[5])+ "  : flaggg ending"  + "  IR ... " + str(IR)
+        #print str(FLAG_REGISTER[5])+ "  : flaggg ending"  + "  IR ... " + str(IR)
+        print "Line limit Error"
         terminate()
 def terminate():
     global IC
@@ -136,7 +143,7 @@ def terminate():
     global input_file
     global eof
     global PTR                                                       ## *********************************88 normal or abnormal exexcution
-    OUT =  '\n\n'
+    OUT = '\n\n'
     write_to_file()
     load()
 
@@ -221,30 +228,50 @@ def executeuserprogram():
     global input_file
     global eof
     global PTR
+    global REAL_ADDRESS_OF_INS
+    simulation()                            ## for first one ... intilized
     while True : 
         RA_IC = address_map(IC)
-        #print RA_IC
         li_chrt = read_memory(RA_IC)
         str_oper = mergestring(li_chrt)
         IR[0] = str_oper[:2]
         IR[1] = str_oper[2:]
-        IC = IC + 1
-        if IR[0]=="LR" : 
-            R = read_memory(int (IR[1]) )
+        IC = IC + 1    ## IC counter
+        REAL_ADDRESS_OF_INS =  address_map(IR[1])
+        print "IR" + IR[0] +"   " +IR[1]
+        print FLAG_REGISTER
+        if ( (FLAG_REGISTER[0]==2 and IR[0][0]!="H") or FLAG_REGISTER[0]==1 or (FLAG_REGISTER[0]==3 and (IR[0]!="SR" and IR[0]!="GD" ))):   ## separate afterwards conditions
+            print "operator operand or page fault"
+            print FLAG_REGISTER
+            if (FLAG_REGISTER[2]== 2):        ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
+                terminate()           ## pass 3,5
+            else :
+                terminate()           ## pass 3 
+        elif (FLAG_REGISTER[2]== 2 and IR[0]!="PD"):
+            print "Time limit Excedded"
+            terminate()
+
+        elif IR[0]=="LR" : 
+            R = read_memory(REAL_ADDRESS_OF_INS )
         elif IR[0]=="SR" :
             tempR = R [:]                                            ## ******************************** copy this way
-            fill_memory(tempR , int(IR[1]))
+            checker =  is_page_entry_available(int(IR[1]))
+            if checker == -1 : 
+                REAL_ADDRESS_OF_INS = add_page_entry_available(int(IR[1]))
+            fill_memory(tempR , REAL_ADDRESS_OF_INS)
         elif IR[0]=="CR" :
-            #print R
-            #print read_memory(int (IR[1]) )
-            if R == read_memory(int (IR[1]) ):
+            if R == read_memory(REAL_ADDRESS_OF_INS ):
                 C = 1 
             else: 
                 C = 0 
         elif IR[0]=="BT" :
             if C== 1: 
-                IC = int (IR[1])
+                #print "BT  ====== >> " +str(REAL_ADDRESS_OF_INS) 
+                IC = int(IR[1])                                      ## Give virtual address only
         elif IR[0]=="GD" :
+            checker =  is_page_entry_available(int(IR[1]))
+            if checker == -1 : 
+                REAL_ADDRESS_OF_INS = add_page_entry_available(int(IR[1]))
             FLAG_REGISTER[1] = 1 
             MOS()
         elif IR[0]=="PD" :
@@ -257,10 +284,14 @@ def executeuserprogram():
             MOS()
             break 
         else : 
-            print "Wrong Operand"
-            print "IR : "+ str(IR)
+            FLAG_REGISTER[0]=1
+            print "Operator error"
+            terminate()
             #exit()
-        
+        FLAG_REGISTER[0]= 0    ## *** dont make last two zero every time
+        FLAG_REGISTER[1]= 0
+        simulation()
+
 ## ['G','D'] => 'GD'
 def mergestring(list_char):
     stri_made = ''
@@ -388,32 +419,57 @@ def address_map(VA):    ## int VA
         FLAG_REGISTER[0]=2   ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
         return -1
     else :
-        base  = VA/10 
+        base  = int(VA)/10 
         displaced_add = PTR + base
         if (M[displaced_add][0]==0):
             FLAG_REGISTER[0]= 3
             return -1 
         else :
             stringofRAbase = mergestring([str(M[displaced_add][1]),str(M[displaced_add][2]),str(M[displaced_add][3])])
+            #print stringofRAbase + " <<<<< ===="+str(displaced_add)
+            #print M[displaced_add]
             intofRAbase = int(stringofRAbase)
-            RA = intofRAbase*10 + VA % 10 
+            RA = intofRAbase*10 + int(VA) % 10 
             return RA
 
 
 def simulation(): 
     global FLAG_REGISTER     ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
     global obj_TTL_TLL  
-    FLAG_REGISTER[4] = FLAG_REGISTER[4] +1 
+    print "before  "+str(FLAG_REGISTER[4]) 
+    FLAG_REGISTER[4] = FLAG_REGISTER[4] +1
+    print "After "+str(FLAG_REGISTER[4])
     if (FLAG_REGISTER[4]==obj_TTL_TLL.TTL):
         FLAG_REGISTER[2] = 2
+
+def is_page_entry_available(Address_of_code):
+    global PTR
+    addressusedbypage = Address_of_code / 10  + PTR
+    ret_parts = read_memory(addressusedbypage)
+    if (int(ret_parts[0]) == 0):
+        return -1 
+    else :
+        return 1 
+
+
+def add_page_entry_available(Address_of_code):
+    global PTR
+    addressusedbypage = Address_of_code / 10  + PTR
+    randomblockno = allocate()
+    basenumber = '0000'+ str(randomblockno/10)   ## adding safeside '0000' bz if basenumber is just 1 how to fill in 4 memory 
+    basechars = spilt_str(basenumber)  ##'000001' = >  ['0','0','0','0','0','1']
+    baselistofchar = spilt_str(basechars[len(basechars)-3:])    ##last 3 digit only
+    totalpasstomemory = [1,] + map(int,baselistofchar)
+    fill_memory(totalpasstomemory,addressusedbypage)
+    return randomblockno
 
 
 input_file = open('in','r')
 load()
-print "PTR ------ >> " + str(PTR)
-for cc in M:
-	print cc
+#print "PTR ------ >> " + str(PTR)
+#for cc in M:
+#	print cc
 
 while True :
-   startexecution()
+    startexecution()
     
