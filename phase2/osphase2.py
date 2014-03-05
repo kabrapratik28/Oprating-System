@@ -3,9 +3,11 @@ import random
 class PCB:        #PCB block  intilize by obj = PCB(10,11) ##access by obj.TTL
     TTL = 0 
     TLL = 0 
-    def __init__(self,TTL,TLL):
+    ID = 0
+    def __init__(self,ID,TTL,TLL):
         self.TTL = TTL 
         self.TLL = TLL
+        self.ID = ID
 
 def allocate():
     global arrayofused
@@ -29,6 +31,7 @@ def intilization():
     global eof
     global arrayofused
     global PTR
+    global Error_message
     IC = 0 
     IR =  [ '' , '' ]   ## ['GD','20'] 
     #  MEMORY INTIALIZATION *** IMPROVE HERE
@@ -41,6 +44,7 @@ def intilization():
     arrayofused = []    ## used blocks array
     PTR = allocate()     ## random bolck as page table 
     fill_memory([0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1] , PTR)    ##page table filling
+    Error_message = "Normal Execution"   ## normal execution ##by default 
 
 def MOS():
     ##SI = 3                                                                                            ??????? 
@@ -75,6 +79,7 @@ def read():
     global eof
     global PTR
     global REAL_ADDRESS_OF_INS
+    global Error_message
     address_of_store = (REAL_ADDRESS_OF_INS /10) *10    ## base address
     final_address = address_of_store   ## address take at is it 
     #char_data =   DATACARD[:40]                           
@@ -88,11 +93,9 @@ def read():
          tempstr= tempstr + DATACARD[0]
          DATACARD = DATACARD[1:]
          counterlenght = counterlenght + 1 
-    #print tempstr
-    #print M
     char_data = tempstr
     if (len(char_data)==0):       ## OUT OF DATA ERROR 
-        print "Out of data"
+        Error_message = "Out of data"
         terminate()
     listofchar = spilt_str(char_data)
     ##fill_memory(listofchar , final_address )                      ## fill memory change ## ?? ??***OUT of DATA
@@ -115,6 +118,7 @@ def write():
     global PTR
     global obj_TTL_TLL
     global REAL_ADDRESS_OF_INS
+    global Error_message
     address_of_store = (REAL_ADDRESS_OF_INS /10) *10   ## base address 
     final_address = address_of_store   ## address written is RA 
     counter_of_mem = 0 
@@ -126,10 +130,8 @@ def write():
     if (obj_TTL_TLL.TLL > FLAG_REGISTER[5]):          ##FLAG = [PI , SI , TI , EM , TTC , LLC ]     ## TLL check 
         FLAG_REGISTER[5] = FLAG_REGISTER[5]+1
         write_to_file()
-        #print str(FLAG_REGISTER[5])+ "  : flaggg " + "  .... limit" +str(obj_TTL_TLL.TLL)
     else: 
-        #print str(FLAG_REGISTER[5])+ "  : flaggg ending"  + "  IR ... " + str(IR)
-        print "Line limit Error"
+        Error_message =  "Line limit Error"
         terminate()
 def terminate():
     global IC
@@ -142,8 +144,11 @@ def terminate():
     global OUT
     global input_file
     global eof
-    global PTR                                                       ## *********************************88 normal or abnormal exexcution
-    OUT = '\n\n'
+    global PTR  ## ********************************* normal or abnormal exexcution
+    global Error_message
+    global obj_TTL_TLL
+    OUT = str(obj_TTL_TLL.ID)+ " "+ str(Error_message)+ "\n"+ str(IR[0])  + " "+ str(FLAG_REGISTER[4])+ " "+str(FLAG_REGISTER[5])
+    OUT =OUT +  '\n\n'
     write_to_file()
     load()
 
@@ -171,7 +176,6 @@ def load():
 	else :
 		card = card + line                                                ##  line[:40].strip("\n\r\t")
     if eof :
-        #End Of Program
         print "Done !!!"
 
         exit()
@@ -180,10 +184,8 @@ def load():
         INSTRUC = list_card_data[0]
         DATACARD = list_card_data[1]
         numbers_in_AMJ = list_card_data[2]
-        obj_TTL_TLL = PCB(int(numbers_in_AMJ[4:8]),int(numbers_in_AMJ[8:]))
+        obj_TTL_TLL = PCB(int(numbers_in_AMJ[0:4]),int(numbers_in_AMJ[4:8]),int(numbers_in_AMJ[8:]))
         listofchar = spilt_str(INSTRUC)  ##instructions character
-        ## fill in memory here
-        ##fill_memory(listofchar , 0, 0 )   ## list , row and col
         lenghtofinstru = len(listofchar)
         pagebaseaddress = PTR
         while(lenghtofinstru>0):                ## program card storing at random places and entry saving in page table
@@ -229,6 +231,7 @@ def executeuserprogram():
     global eof
     global PTR
     global REAL_ADDRESS_OF_INS
+    global Error_message
     simulation()                            ## for first one ... intilized
     while True : 
         RA_IC = address_map(IC)
@@ -238,17 +241,22 @@ def executeuserprogram():
         IR[1] = str_oper[2:]
         IC = IC + 1    ## IC counter
         REAL_ADDRESS_OF_INS =  address_map(IR[1])
-        print "IR" + IR[0] +"   " +IR[1]
-        print FLAG_REGISTER
         if ( (FLAG_REGISTER[0]==2 and IR[0][0]!="H") or FLAG_REGISTER[0]==1 or (FLAG_REGISTER[0]==3 and (IR[0]!="SR" and IR[0]!="GD" ))):   ## separate afterwards conditions
-            print "operator operand or page fault"
-            print FLAG_REGISTER
+            Error_message =  "operator operand or page fault"
             if (FLAG_REGISTER[2]== 2):        ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
+                Error_message ="Time limit exceeded with operand error"
                 terminate()           ## pass 3,5
             else :
+                if (FLAG_REGISTER[0]==2) : ##operand error
+                    Error_message = "Operand error"
+                elif (FLAG_REGISTER[0]==3) : ##page fault
+                    Error_message = "Page fault"
                 terminate()           ## pass 3 
         elif (FLAG_REGISTER[2]== 2 and IR[0]!="PD"):
-            print "Time limit Excedded"
+            if (IR[0]=="LR" or IR[0]=="SR" or IR[0]=="CR" or IR[0]=="BT" or IR[0]=="GD" or IR[0]=="XX" or IR[0]=="H"):
+                Error_message =  "Time limit Excedded"
+            else :
+                Error_message =  "Time limit Excedded with opcode error"
             terminate()
 
         elif IR[0]=="LR" : 
@@ -285,7 +293,7 @@ def executeuserprogram():
             break 
         else : 
             FLAG_REGISTER[0]=1
-            print "Operator error"
+            Error_message =  "Operator error"
             terminate()
             #exit()
         FLAG_REGISTER[0]= 0    ## *** dont make last two zero every time
@@ -426,8 +434,6 @@ def address_map(VA):    ## int VA
             return -1 
         else :
             stringofRAbase = mergestring([str(M[displaced_add][1]),str(M[displaced_add][2]),str(M[displaced_add][3])])
-            #print stringofRAbase + " <<<<< ===="+str(displaced_add)
-            #print M[displaced_add]
             intofRAbase = int(stringofRAbase)
             RA = intofRAbase*10 + int(VA) % 10 
             return RA
@@ -435,10 +441,8 @@ def address_map(VA):    ## int VA
 
 def simulation(): 
     global FLAG_REGISTER     ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
-    global obj_TTL_TLL  
-    print "before  "+str(FLAG_REGISTER[4]) 
+    global obj_TTL_TLL   
     FLAG_REGISTER[4] = FLAG_REGISTER[4] +1
-    print "After "+str(FLAG_REGISTER[4])
     if (FLAG_REGISTER[4]==obj_TTL_TLL.TTL):
         FLAG_REGISTER[2] = 2
 
@@ -466,10 +470,6 @@ def add_page_entry_available(Address_of_code):
 
 input_file = open('in','r')
 load()
-#print "PTR ------ >> " + str(PTR)
-#for cc in M:
-#	print cc
-
 while True :
     startexecution()
     
