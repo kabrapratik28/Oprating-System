@@ -3,35 +3,35 @@
 ***
 **
 202 Line limit Error
-PD 15 4
+15 PD 15 4
 
 CAT CANEAT RAT
 RAT
 302 Normal Execution
-H 10 2
+10 H 10 2
 
 102 Page fault
-LR 2 0
+2 LR 2 0
 
 ABCD
 ABCD
 401 Time limit Excedded
-BT 9 2
+9 BT 9 2
 
 1503 Operand error
-SR 4 0
+4 SR 4 0
 
 1403 Operator error
-PA 9 0
+9 PA 9 0
 
 1404 Out of data
-GD 1 0
+1 GD 1 0
 
 ABCD
 402 Time limit Excedded with opcode error
-Pr 4 1
+4 Pr 4 1
 
 ABCD
 403 Time limit exceeded with operand error
-PD 4 1
+4 PD 4 1
 

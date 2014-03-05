@@ -147,7 +147,7 @@ def terminate():
     global PTR  ## ********************************* normal or abnormal exexcution
     global Error_message
     global obj_TTL_TLL
-    OUT = str(obj_TTL_TLL.ID)+ " "+ str(Error_message)+ "\n"+ str(IR[0])  + " "+ str(FLAG_REGISTER[4])+ " "+str(FLAG_REGISTER[5])
+    OUT = str(obj_TTL_TLL.ID)+ " "+ str(Error_message)+ "\n"+ str(IC) +" "+  str(IR[0])  + " "+ str(FLAG_REGISTER[4])+ " "+str(FLAG_REGISTER[5])
     OUT =OUT +  '\n\n'
     write_to_file()
     load()
@@ -232,6 +232,7 @@ def executeuserprogram():
     global PTR
     global REAL_ADDRESS_OF_INS
     global Error_message
+    global obj_TTL_TLL
     simulation()                            ## for first one ... intilized
     while True : 
         RA_IC = address_map(IC)
@@ -241,8 +242,8 @@ def executeuserprogram():
         IR[1] = str_oper[2:]
         IC = IC + 1    ## IC counter
         REAL_ADDRESS_OF_INS =  address_map(IR[1])
-        if ( (FLAG_REGISTER[0]==2 and IR[0][0]!="H") or FLAG_REGISTER[0]==1 or (FLAG_REGISTER[0]==3 and (IR[0]!="SR" and IR[0]!="GD" ))):   ## separate afterwards conditions
-            Error_message =  "operator operand or page fault"
+        if ( (FLAG_REGISTER[0]==2 and IR[0]!="H") or FLAG_REGISTER[0]==1 or (FLAG_REGISTER[0]==3 and (IR[0]!="SR" and IR[0]!="GD" ))):   ## separate afterwards conditions
+            ## One of the Error_message  is   "operator operand or page fault"
             if (FLAG_REGISTER[2]== 2):        ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
                 Error_message ="Time limit exceeded with operand error"
                 terminate()           ## pass 3,5
@@ -433,7 +434,7 @@ def address_map(VA):    ## int VA
             FLAG_REGISTER[0]= 3
             return -1 
         else :
-            stringofRAbase = mergestring([str(M[displaced_add][1]),str(M[displaced_add][2]),str(M[displaced_add][3])])
+            stringofRAbase = '0000'+mergestring([str(M[displaced_add][1]),str(M[displaced_add][2]),str(M[displaced_add][3])])
             intofRAbase = int(stringofRAbase)
             RA = intofRAbase*10 + int(VA) % 10 
             return RA
@@ -467,7 +468,8 @@ def add_page_entry_available(Address_of_code):
     fill_memory(totalpasstomemory,addressusedbypage)
     return randomblockno
 
-
+jstnill = open('out','w')
+jstnill.close()
 input_file = open('in','r')
 load()
 while True :
