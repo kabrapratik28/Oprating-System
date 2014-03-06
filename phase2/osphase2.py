@@ -59,7 +59,28 @@ def MOS():
     global input_file
     global eof
     global PTR
-    if FLAG_REGISTER[1] == 1 :
+    global Error_message
+
+    if ( (FLAG_REGISTER[0]==2 and IR[0]!="H") or FLAG_REGISTER[0]==1 or (FLAG_REGISTER[0]==3 and (IR[0]!="SR" and IR[0]!="GD" ))):   ## separate afterwards conditions
+            ## One of the Error_message  is   "operator operand or page fault"
+            if (FLAG_REGISTER[2]== 2):        ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
+                Error_message ="Time limit exceeded with operand error"
+                terminate()           ## pass 3,5
+            else :
+                if (FLAG_REGISTER[0]==2) : ##operand error
+                    Error_message = "Operand error"
+                elif (FLAG_REGISTER[0]==3) : ##page fault
+                    Error_message = "Page fault"
+                terminate()           ## pass 3 
+    elif (FLAG_REGISTER[2]== 2 and IR[0]!="PD"):
+            if (IR[0]=="LR" or IR[0]=="SR" or IR[0]=="CR" or IR[0]=="BT" or IR[0]=="GD" or IR[0]=="XX" or IR[0]=="H"):
+                Error_message =  "Time limit Excedded"
+            else :
+                Error_message =  "Time limit Excedded with opcode error"
+            terminate()
+
+
+    elif FLAG_REGISTER[1] == 1 :
         read()
     elif FLAG_REGISTER[1] == 2:
         write()
@@ -94,7 +115,8 @@ def read():
          DATACARD = DATACARD[1:]
          counterlenght = counterlenght + 1 
     char_data = tempstr
-    if (len(char_data)==0):       ## OUT OF DATA ERROR 
+    if (len(char_data)==0):       ## OUT OF DATA ERROR
+        FLAG_REGISTER[4]=FLAG_REGISTER[4]-1
         Error_message = "Out of data"
         terminate()
     listofchar = spilt_str(char_data)
@@ -130,7 +152,8 @@ def write():
     if (obj_TTL_TLL.TLL > FLAG_REGISTER[5]):          ##FLAG = [PI , SI , TI , EM , TTC , LLC ]     ## TLL check 
         FLAG_REGISTER[5] = FLAG_REGISTER[5]+1
         write_to_file()
-    else: 
+    else:
+        FLAG_REGISTER[4]=FLAG_REGISTER[4]-1
         Error_message =  "Line limit Error"
         terminate()
 def terminate():
@@ -147,7 +170,7 @@ def terminate():
     global PTR  ## ********************************* normal or abnormal exexcution
     global Error_message
     global obj_TTL_TLL
-    OUT = str(obj_TTL_TLL.ID)+ " "+ str(Error_message)+ "\n"+ str(IC) +" "+  str(IR[0])  + " "+ str(FLAG_REGISTER[4])+ " "+str(FLAG_REGISTER[5])
+    OUT = str(obj_TTL_TLL.ID)+ " "+ str(Error_message)+ "\n"+ str(IC) +" "+  str(IR[0])  +str(IR[1]) +" "+str(FLAG_REGISTER[4])+ " "+str(FLAG_REGISTER[5])
     OUT =OUT +  '\n\n'
     write_to_file()
     load()
@@ -243,23 +266,11 @@ def executeuserprogram():
         IC = IC + 1    ## IC counter
         REAL_ADDRESS_OF_INS =  address_map(IR[1])
         if ( (FLAG_REGISTER[0]==2 and IR[0]!="H") or FLAG_REGISTER[0]==1 or (FLAG_REGISTER[0]==3 and (IR[0]!="SR" and IR[0]!="GD" ))):   ## separate afterwards conditions
-            ## One of the Error_message  is   "operator operand or page fault"
-            if (FLAG_REGISTER[2]== 2):        ## FLAG = [PI , SI , TI , EM , TTC , LLC ]
-                Error_message ="Time limit exceeded with operand error"
-                terminate()           ## pass 3,5
-            else :
-                if (FLAG_REGISTER[0]==2) : ##operand error
-                    Error_message = "Operand error"
-                elif (FLAG_REGISTER[0]==3) : ##page fault
-                    Error_message = "Page fault"
-                terminate()           ## pass 3 
+            FLAG_REGISTER[4]=FLAG_REGISTER[4]-1
+            MOS()
         elif (FLAG_REGISTER[2]== 2 and IR[0]!="PD"):
-            if (IR[0]=="LR" or IR[0]=="SR" or IR[0]=="CR" or IR[0]=="BT" or IR[0]=="GD" or IR[0]=="XX" or IR[0]=="H"):
-                Error_message =  "Time limit Excedded"
-            else :
-                Error_message =  "Time limit Excedded with opcode error"
-            terminate()
-
+            FLAG_REGISTER[4]= FLAG_REGISTER[4]-1
+            MOS()
         elif IR[0]=="LR" : 
             R = read_memory(REAL_ADDRESS_OF_INS )
         elif IR[0]=="SR" :
@@ -294,12 +305,15 @@ def executeuserprogram():
             break 
         else : 
             FLAG_REGISTER[0]=1
+            FLAG_REGISTER[4]=FLAG_REGISTER[4]-1
             Error_message =  "Operator error"
             terminate()
             #exit()
+        
+        simulation()
         FLAG_REGISTER[0]= 0    ## *** dont make last two zero every time
         FLAG_REGISTER[1]= 0
-        simulation()
+        
 
 ## ['G','D'] => 'GD'
 def mergestring(list_char):
